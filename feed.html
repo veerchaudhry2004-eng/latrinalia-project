@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feed — The Latrinalia Project</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { margin: 0; }
+  </style>
+</head>
+<body class="feed-body">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <span class="page-label white">FEED</span>
+      <button class="menu-toggle white" id="menu-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <a href="index.html" class="header-center white">THE LATRINALIA PROJECT</a>
+    <a href="upload.html" class="upload-btn light">
+      <img src="upload-icon.png" alt="Upload">
+    </a>
+  </header>
+
+  <!-- Dim overlay -->
+  <div class="menu-overlay" id="menu-overlay"></div>
+
+  <!-- Nav drawer -->
+  <nav class="nav-drawer" id="nav-drawer">
+    <button class="menu-close" id="menu-close">✕</button>
+    <a href="home.html">HOME</a>
+    <a href="data.html">DATA</a>
+    <a href="map.html">MAP</a>
+    <a href="feed.html">FEED</a>
+  </nav>
+
+  <!-- Feed -->
+  <div class="feed-container">
+
+    <article class="feed-item">
+      <img class="feed-photo" src="hoop-and-toy.jpg" alt="Latrinalia at Hoop & Toy">
+      <div class="feed-caption">
+        <div class="location">Hoop &amp; Toy (34 Thurloe Pl, SW7 2HQ)</div>
+        <div class="timestamp">19:07 &nbsp; 9/2/2026</div>
+      </div>
+    </article>
+
+  </div>
+
+  <script>
+    // Append any user-submitted uploads from localStorage
+    const uploads = JSON.parse(localStorage.getItem('latrinaliaUploads') || '[]');
+    const container = document.querySelector('.feed-container');
+    uploads.forEach(entry => {
+      const article = document.createElement('article');
+      article.className = 'feed-item';
+      const photoHTML = entry.photo
+        ? `<img class="feed-photo" src="${entry.photo}" alt="${entry.pub}">`
+        : `<div class="feed-photo-placeholder" style="background:#111;font-size:4rem;">📷</div>`;
+      article.innerHTML = `
+        ${photoHTML}
+        <div class="feed-caption">
+          <div class="location">${entry.address}</div>
+          <div class="timestamp">${entry.datetime}</div>
+          ${entry.caption ? `<div style="font-size:0.82rem;margin-top:4px;opacity:0.7;">${entry.caption}</div>` : ''}
+        </div>`;
+      container.appendChild(article);
+    });
+  </script>
+  <script src="menu.js"></script>
+</body>
+</html>

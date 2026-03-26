@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data — The Latrinalia Project</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { margin: 0; }
+  </style>
+</head>
+<body class="data-body">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <span class="page-label">DATA</span>
+      <button class="menu-toggle dark" id="menu-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <a href="index.html" class="header-center">THE LATRINALIA PROJECT</a>
+    <a href="upload.html" class="upload-btn dark">
+      <img src="upload-icon.png" alt="Upload">
+    </a>
+  </header>
+
+  <!-- Dim overlay -->
+  <div class="menu-overlay" id="menu-overlay"></div>
+
+  <!-- Nav drawer -->
+  <nav class="nav-drawer" id="nav-drawer">
+    <button class="menu-close" id="menu-close">✕</button>
+    <a href="home.html">HOME</a>
+    <a href="data.html">DATA</a>
+    <a href="map.html">MAP</a>
+    <a href="feed.html">FEED</a>
+  </nav>
+
+  <!-- Map -->
+  <div id="data-map" class="data-map-grey"></div>
+
+  <!-- Legend -->
+  <div class="map-key">
+    <p>Key:</p>
+    <div class="key-item">
+      <div class="key-dot high"></div>
+      <span>Very likely to spot latrinalia</span>
+    </div>
+    <div class="key-item">
+      <div class="key-dot medium"></div>
+      <span>Somewhat likely to spot latrinalia</span>
+    </div>
+    <div class="key-item">
+      <div class="key-dot low"></div>
+      <span>Unlikely to spot latrinalia</span>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="menu.js"></script>
+  <script>
+    const map = L.map('data-map', {
+      center: [51.499, -0.138],
+      zoom: 12,
+      zoomControl: false
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      maxZoom: 19
+    }).addTo(map);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // ── STEP 1: overlay the reference image using calibrated geographic bounds ──
+    // ── circles ────────────────────────────────────────────────────────────────
+    const heatData = [
+      { lat: 51.4910,  lng: -0.1729,  r: 453, opacity: 0.28 },
+      { lat: 51.4950,  lng: -0.1543,  r: 278, opacity: 0.28 },
+      { lat: 51.5096,  lng: -0.1518,  r: 185, opacity: 0.28 },
+      { lat: 51.4762,  lng: -0.1434,  r: 306, opacity: 0.44 },
+      { lat: 51.4934,  lng: -0.1973,  r: 226, opacity: 0.70 },
+      { lat: 51.4978,  lng: -0.2103,  r: 171, opacity: 0.44 },
+      { lat: 51.5106,  lng: -0.2050,  r: 356, opacity: 0.44 },
+      { lat: 51.5172,  lng: -0.1714,  r: 229, opacity: 0.44 },
+      { lat: 51.5231,  lng: -0.1583,  r: 119, opacity: 0.44 },
+      { lat: 51.5139,  lng: -0.1355,  r: 243, opacity: 0.70 },
+      { lat: 51.5122,  lng: -0.1221,  r: 171, opacity: 0.70 },
+      { lat: 51.5010,  lng: -0.1139,  r: 303, opacity: 0.70 },
+      { lat: 51.4943,  lng: -0.0989,  r: 249, opacity: 0.70 },
+      { lat: 51.5241,  lng: -0.1325,  r: 190, opacity: 0.70 },
+      { lat: 51.5375,  lng: -0.1410,  r: 349, opacity: 0.70 },
+      { lat: 51.5228,  lng: -0.1048,  r: 140, opacity: 0.44 },
+      { lat: 51.5013,  lng: -0.1628,  r: 127, opacity: 0.44 },
+    ];
+
+    const colourMap = {
+      0.70: { fill: '#ff2121', opacity: 0.50 },
+      0.44: { fill: '#ff8484', opacity: 0.50 },
+      0.28: { fill: '#ffc9c9', opacity: 0.50 },
+    };
+
+    heatData.forEach(d => {
+      const style = colourMap[d.opacity] || { fill: '#ff2121', opacity: d.opacity };
+      L.circle([d.lat, d.lng], {
+        radius: d.r,
+        color: 'transparent',
+        fillColor: style.fill,
+        fillOpacity: style.opacity,
+        interactive: false
+      }).addTo(map);
+    });
+
+  </script>
+
+</body>
+</html>

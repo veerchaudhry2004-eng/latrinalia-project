@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reading List — The Latrinalia Project</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { margin: 0; }
+  </style>
+</head>
+<body class="reading-list-body">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <span class="page-label white">READING LIST</span>
+      <button class="menu-toggle white" id="menu-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <a href="index.html" class="header-center white">THE LATRINALIA PROJECT</a>
+    <a href="upload.html" class="upload-btn light">
+      <img src="upload-icon.png" alt="Upload">
+    </a>
+  </header>
+
+  <!-- Dim overlay -->
+  <div class="menu-overlay" id="menu-overlay"></div>
+
+  <!-- Nav drawer -->
+  <nav class="nav-drawer" id="nav-drawer">
+    <button class="menu-close" id="menu-close">✕</button>
+    <a href="home.html">HOME</a>
+    <a href="data.html">DATA</a>
+    <a href="map.html">MAP</a>
+    <a href="feed.html">FEED</a>
+  </nav>
+
+  <h1 class="reading-list-title">READING LIST</h1>
+
+  <ul class="reading-list-items">
+
+    <li class="reading-item">
+      <a href="https://www.theguardian.com/artanddesign/2023/dec/21/toilet-graffiti-latrinalia" target="_blank" rel="noopener">
+        https://www.theguardian.com/artanddesign/2023/dec/21/toilet-graffiti-latrinalia
+      </a>
+      <p class="reading-desc">The Guardian — "The art of toilet graffiti: why do people write on bathroom walls?" (2023)</p>
+    </li>
+
+    <li class="reading-item">
+      <a href="https://escholarship.org/content/qt8d63j4wt/qt8d63j4wt.pdf" target="_blank" rel="noopener">
+        https://escholarship.org/content/qt8d63j4wt/qt8d63j4wt.pdf
+      </a>
+      <p class="reading-desc">eScholarship — Academic paper on latrinalia and discourse analysis</p>
+    </li>
+
+    <li class="reading-item">
+      <a href="https://graffitireview.com/a-study-of-dublin-latrinalia" target="_blank" rel="noopener">
+        https://graffitireview.com/a-study-of-dublin-latrinalia
+      </a>
+      <p class="reading-desc">Graffiti Review — A Study of Dublin Latrinalia</p>
+    </li>
+
+  </ul>
+
+  <script src="menu.js"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map — The Latrinalia Project</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { margin: 0; }
+
+    /* Custom black map pin */
+    .custom-pin {
+      width: 28px;
+      height: 28px;
+    }
+  </style>
+</head>
+<body class="map-body">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <span class="page-label">MAP</span>
+      <button class="menu-toggle dark" id="menu-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <a href="index.html" class="header-center">THE LATRINALIA PROJECT</a>
+    <a href="upload.html" class="upload-btn dark">
+      <img src="upload-icon.png" alt="Upload">
+    </a>
+  </header>
+
+  <!-- Dim overlay -->
+  <div class="menu-overlay" id="menu-overlay"></div>
+
+  <!-- Nav drawer -->
+  <nav class="nav-drawer" id="nav-drawer">
+    <button class="menu-close" id="menu-close">✕</button>
+    <a href="home.html">HOME</a>
+    <a href="data.html">DATA</a>
+    <a href="map.html">MAP</a>
+    <a href="feed.html">FEED</a>
+  </nav>
+
+  <div id="main-map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="menu.js"></script>
+  <script>
+    const map = L.map('main-map', {
+      center: [51.505, -0.12],
+      zoom: 12,
+      zoomControl: false
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Custom black pin SVG
+    const blackPin = L.divIcon({
+      className: '',
+      html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="28" height="42">
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24C24 5.373 18.627 0 12 0z" fill="#0d0d0d"/>
+        <circle cx="12" cy="12" r="5" fill="white"/>
+      </svg>`,
+      iconSize: [28, 42],
+      iconAnchor: [14, 42],
+      popupAnchor: [0, -44]
+    });
+
+    function addPin(entry) {
+      const photoHTML = entry.photo
+        ? `<img src="${entry.photo}" style="width:100%;height:160px;object-fit:cover;display:block;">`
+        : `<div style="width:100%;height:100px;background:#222;display:flex;align-items:center;justify-content:center;color:#555;font-size:2rem;">📷</div>`;
+
+      const popup = L.popup({ maxWidth: 260, closeButton: true }).setContent(`
+        <div class="popup-photo">${photoHTML}</div>
+        <div class="popup-info">
+          <strong>${entry.pub}</strong><br>
+          ${entry.address}<br>
+          ${entry.datetime}
+          ${entry.caption ? `<br><span style="font-weight:400;color:#555;">${entry.caption}</span>` : ''}
+        </div>
+      `);
+
+      L.marker([entry.lat, entry.lng], { icon: blackPin })
+        .bindPopup(popup)
+        .addTo(map);
+    }
+
+    // Hardcoded seed: Hoop & Toy at correct geographic location
+    addPin({
+      pub: 'Hoop &amp; Toy',
+      address: '34 Thurloe Pl, SW7 2HQ',
+      datetime: '19:07 &nbsp; 9/2/2026',
+      caption: 'Marker pen tags on the back of the cubicle door.',
+      photo: 'hoop-and-toy.jpg',
+      lat: 51.4958,
+      lng: -0.1718
+    });
+
+    // Load any user-submitted entries from localStorage
+    const uploads = JSON.parse(localStorage.getItem('latrinaliaUploads') || '[]');
+    uploads.forEach(addPin);
+  </script>
+
+</body>
+</html>

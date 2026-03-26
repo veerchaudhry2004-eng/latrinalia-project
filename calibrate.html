@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circle Builder — Latrinalia</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { display: flex; flex-direction: column; height: 100vh; font-family: 'Andale Mono', monospace; font-size: 12px; background: #111; color: #eee; }
+
+    #toolbar {
+      display: flex; gap: 14px; align-items: flex-end;
+      padding: 8px 12px; background: #0d0d0d;
+      border-bottom: 1px solid #2a2a2a; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .tg { display: flex; flex-direction: column; gap: 3px; }
+    .tg label { font-size: 9px; text-transform: uppercase; color: #666; letter-spacing: 0.05em; }
+    .tg .btn-row { display: flex; gap: 4px; }
+
+    button {
+      background: #1e1e1e; border: 1px solid #444; color: #ccc;
+      padding: 5px 11px; font-family: inherit; font-size: 11px; cursor: pointer; border-radius: 2px;
+    }
+    button:hover { background: #2a2a2a; }
+    button.active { background: #c02020; border-color: #e03030; color: #fff; }
+    button.active:hover { background: #d02828; }
+    button.danger { border-color: #5a1a1a; color: #e08080; }
+    button.danger:hover { background: #2a0d0d; }
+
+    #status { font-size: 10px; color: #666; padding: 3px 0; align-self: center; }
+
+    #map-wrap { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; }
+    .draw-cursor { cursor: crosshair !important; }
+
+    #panel {
+      position: absolute; top: 10px; right: 10px; width: 210px;
+      background: rgba(10,10,10,0.93); border: 1px solid #333; border-radius: 3px;
+      padding: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 8px;
+    }
+    #panel h3 { font-size: 10px; text-transform: uppercase; color: #888; border-bottom: 1px solid #222; padding-bottom: 5px; }
+    .row { display: flex; align-items: center; gap: 6px; }
+    .row label { font-size: 10px; color: #666; min-width: 60px; }
+    .row input[type="range"] { flex: 1; }
+    .row input[type="number"] { width: 72px; background: #1c1c1c; border: 1px solid #333; color: #eee; padding: 2px 5px; font-family: inherit; font-size: 11px; }
+    .row span { font-size: 10px; color: #888; min-width: 28px; text-align: right; }
+    #circle-coords { font-size: 10px; color: #666; line-height: 1.6; }
+    #no-sel { font-size: 10px; color: #555; }
+    #circle-ctrls { display: none; flex-direction: column; gap: 7px; }
+    #circle-ctrls.show { display: flex; }
+    .qop { display: flex; gap: 3px; flex-wrap: wrap; }
+    .qop button { flex: 1; font-size: 10px; padding: 3px 2px; }
+
+    #export-panel {
+      position: absolute; bottom: 10px; right: 10px; width: 340px;
+      background: rgba(10,10,10,0.96); border: 1px solid #333; border-radius: 3px;
+      padding: 10px; z-index: 1001; display: none; flex-direction: column; gap: 6px;
+    }
+    #export-panel .ep-hdr { display: flex; justify-content: space-between; align-items: center; }
+    #export-panel .ep-hdr span { font-size: 11px; color: #aaa; }
+    #export-panel textarea {
+      width: 100%; height: 220px; background: #060606; border: 1px solid #2a2a2a;
+      color: #4ec; font-family: monospace; font-size: 10px; padding: 6px; resize: vertical;
+    }
+    #export-panel button { width: 100%; margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div class="tg">
+    <label>Tool</label>
+    <div class="btn-row">
+      <button id="btn-draw" class="active">Draw</button>
+      <button id="btn-select">Select</button>
+    </div>
+  </div>
+
+  <div class="tg"><label>&nbsp;</label><button id="btn-export">Export Code</button></div>
+  <div class="tg"><label>&nbsp;</label><button id="btn-clear" class="danger">Clear All</button></div>
+
+  <div id="status">Click on map to place circle centre</div>
+</div>
+
+<div id="map-wrap">
+  <div id="map"></div>
+
+  <div id="panel">
+    <h3>Selected Circle</h3>
+    <div id="no-sel">No circle selected.<br>Draw or click a circle.</div>
+    <div id="circle-ctrls">
+      <div id="circle-coords"></div>
+      <div class="row">
+        <label>Radius m</label>
+        <input type="number" id="c-radius" value="1000" step="50" min="50">
+      </div>
+      <div class="row">
+        <label>Opacity</label>
+        <input type="range" id="c-opacity" min="0.05" max="1" step="0.01" value="0.82">
+        <span id="c-op-val">0.82</span>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#555;margin-bottom:3px;">Quick opacity:</div>
+        <div class="qop">
+          <button onclick="qop(0.82)">High</button>
+          <button onclick="qop(0.44)">Mid</button>
+          <button onclick="qop(0.28)">Low</button>
+          <button onclick="qop(0.70)">Bright</button>
+        </div>
+      </div>
+      <button id="btn-del" class="danger">Delete Circle</button>
+    </div>
+  </div>
+
+  <div id="export-panel">
+    <div class="ep-hdr">
+      <span>Paste into data.html heatData</span>
+      <button onclick="document.getElementById('export-panel').style.display='none'" style="padding:2px 7px;">✕</button>
+    </div>
+    <textarea id="export-code" readonly></textarea>
+    <button onclick="copyExport()">Copy to Clipboard</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map', { center: [51.499, -0.138], zoom: 12, zoomControl: true });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO', maxZoom: 19
+}).addTo(map);
+
+let circles = [];
+let selIdx = null;
+let drawMode = true;
+let pending = null;
+
+const mapWrap = document.getElementById('map-wrap');
+
+function setDrawMode(on) {
+  drawMode = on;
+  document.getElementById('btn-draw').classList.toggle('active', on);
+  document.getElementById('btn-select').classList.toggle('active', !on);
+  mapWrap.classList.toggle('draw-cursor', on);
+  document.getElementById('status').textContent =
+    on ? 'Click to set circle centre' : 'Click a circle to select it';
+  if (pending) { pending.preview.remove(); pending = null; }
+  if (!on) selectCircle(null);
+}
+
+document.getElementById('btn-draw').onclick   = () => setDrawMode(true);
+document.getElementById('btn-select').onclick = () => setDrawMode(false);
+
+map.on('click', function(e) {
+  if (!drawMode) return;
+  if (!pending) {
+    const preview = L.circle(e.latlng, {
+      radius: 100, color: '#ff4444', weight: 1.5, dashArray: '5,4',
+      fillColor: '#cc2222', fillOpacity: 0.45, interactive: false
+    }).addTo(map);
+    pending = { center: e.latlng, preview };
+    document.getElementById('status').textContent = 'Move mouse to size — click to confirm';
+  } else {
+    const r = Math.max(50, Math.round(pending.center.distanceTo(e.latlng)));
+    pending.preview.remove();
+    const idx = addCircle(pending.center, r, 0.82);
+    pending = null;
+    selectCircle(idx);
+    document.getElementById('status').textContent = 'Circle placed. Adjust in the panel →';
+  }
+});
+
+map.on('mousemove', function(e) {
+  if (drawMode && pending)
+    pending.preview.setRadius(Math.max(50, pending.center.distanceTo(e.latlng)));
+});
+
+function addCircle(latlng, radius, opacity) {
+  const layer = L.circle(latlng, {
+    radius, color: 'transparent',
+    fillColor: '#cc2222', fillOpacity: opacity, interactive: true
+  }).addTo(map);
+  const idx = circles.length;
+  circles.push({ latlng, radius, opacity, layer });
+  layer.on('click', function(ev) {
+    L.DomEvent.stopPropagation(ev);
+    if (!drawMode) selectCircle(idx);
+  });
+  return idx;
+}
+
+function selectCircle(idx) {
+  if (selIdx !== null && circles[selIdx])
+    circles[selIdx].layer.setStyle({ color: 'transparent' });
+  selIdx = idx;
+  const ctrls = document.getElementById('circle-ctrls');
+  const nosel = document.getElementById('no-sel');
+  if (idx === null) { ctrls.classList.remove('show'); nosel.style.display = ''; return; }
+  const c = circles[idx];
+  c.layer.setStyle({ color: '#ffffff', weight: 1.5 });
+  ctrls.classList.add('show');
+  nosel.style.display = 'none';
+  document.getElementById('c-radius').value = Math.round(c.radius);
+  document.getElementById('c-opacity').value = c.opacity;
+  document.getElementById('c-op-val').textContent = c.opacity.toFixed(2);
+  document.getElementById('circle-coords').innerHTML =
+    `Lat: ${c.latlng.lat.toFixed(5)}<br>Lng: ${c.latlng.lng.toFixed(5)}`;
+}
+
+document.getElementById('c-radius').oninput = function() {
+  if (selIdx === null) return;
+  const r = Math.max(50, parseFloat(this.value) || 500);
+  circles[selIdx].radius = r;
+  circles[selIdx].layer.setRadius(r);
+};
+
+document.getElementById('c-opacity').oninput = function() {
+  if (selIdx === null) return;
+  const op = parseFloat(this.value);
+  circles[selIdx].opacity = op;
+  circles[selIdx].layer.setStyle({ fillOpacity: op });
+  document.getElementById('c-op-val').textContent = op.toFixed(2);
+};
+
+function qop(val) {
+  if (selIdx === null) return;
+  circles[selIdx].opacity = val;
+  circles[selIdx].layer.setStyle({ fillOpacity: val });
+  document.getElementById('c-opacity').value = val;
+  document.getElementById('c-op-val').textContent = val.toFixed(2);
+}
+
+document.getElementById('btn-del').onclick = function() {
+  if (selIdx === null) return;
+  circles[selIdx].layer.remove();
+  circles.splice(selIdx, 1);
+  selIdx = null;
+  document.getElementById('circle-ctrls').classList.remove('show');
+  document.getElementById('no-sel').style.display = '';
+};
+
+document.getElementById('btn-clear').onclick = function() {
+  if (!confirm('Delete all circles?')) return;
+  circles.forEach(c => c.layer.remove());
+  circles = []; selIdx = null;
+  document.getElementById('circle-ctrls').classList.remove('show');
+  document.getElementById('no-sel').style.display = '';
+};
+
+document.getElementById('btn-export').onclick = function() {
+  if (circles.length === 0) { alert('No circles to export yet.'); return; }
+  const lines = circles.map(c =>
+    `      { lat: ${c.latlng.lat.toFixed(4)},  lng: ${c.latlng.lng.toFixed(4)},  r: ${Math.round(c.radius)}, opacity: ${c.opacity.toFixed(2)} },`
+  ).join('\n');
+  document.getElementById('export-code').value = `const heatData = [\n${lines}\n];`;
+  document.getElementById('export-panel').style.display = 'flex';
+};
+
+function copyExport() {
+  const ta = document.getElementById('export-code');
+  ta.select();
+  document.execCommand('copy');
+  alert('Copied to clipboard!');
+}
+</script>
+</body>
+</html>
