@@ -151,8 +151,22 @@
   <!-- Toast notification -->
   <div class="toast" id="toast">Submission added to the feed!</div>
 
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script>
-    // Pre-fill date/time input with current date and time as a suggestion
+    firebase.initializeApp({
+      apiKey: "AIzaSyDHJ_vW37r4JIFILGKFR36mqNWE2DCzxAo",
+      authDomain: "latrinalia-project.firebaseapp.com",
+      projectId: "latrinalia-project",
+      storageBucket: "latrinalia-project.firebasestorage.app",
+      messagingSenderId: "257656095314",
+      appId: "1:257656095314:web:bb7e79f96febcab79f158b"
+    });
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // Pre-fill date/time input
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
     document.getElementById('datetime-input').value =
@@ -161,14 +175,11 @@
     // Toggle input areas when clicking a field
     document.querySelectorAll('.upload-field').forEach(field => {
       field.addEventListener('click', function(e) {
-        if (e.target.closest('.field-input-area')) return; // don't re-trigger if clicking inside input
+        if (e.target.closest('.field-input-area')) return;
         const inputArea = this.querySelector('.field-input-area');
         if (!inputArea) return;
-
         const isActive = inputArea.classList.contains('active');
         inputArea.classList.toggle('active', !isActive);
-
-        // For photo field, trigger file input
         if (this.id === 'field-photo' && !isActive) {
           document.getElementById('photo-input').click();
         } else if (!isActive) {
@@ -199,9 +210,9 @@
       e.preventDefault();
 
       const location = document.querySelector('#input-location input').value.trim();
-      const caption  = document.querySelector('#input-caption input') ? document.querySelector('#input-caption input').value.trim() : '';
+      const caption  = document.querySelector('#input-caption input').value.trim();
       const datetime = document.getElementById('datetime-input').value;
-      const photoSrc = document.getElementById('photo-preview').src || '';
+      const photoFile = document.getElementById('photo-input').files[0];
 
       if (!location) { alert('Please add a location.'); return; }
 
@@ -209,24 +220,44 @@
       let displayDT = datetime;
       if (datetime) {
         const d = new Date(datetime);
-        const pad = n => String(n).padStart(2,'0');
         displayDT = `${pad(d.getHours())}:${pad(d.getMinutes())} ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
       }
 
-      // Geocode address using OpenStreetMap Nominatim (no API key needed)
+      const submitBtn = document.querySelector('.submit-btn');
+      submitBtn.disabled = true;
+
+      // Upload photo to Firebase Storage
+      let photoURL = '';
+      if (photoFile) {
+        const ref = storage.ref(`photos/${Date.now()}_${photoFile.name}`);
+        await ref.put(photoFile);
+        photoURL = await ref.getDownloadURL();
+      }
+
+      // Geocode via Nominatim (5s timeout)
       let lat = null, lng = null;
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location + ', London')}&format=json&limit=1`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location + ', London')}&format=json&limit=1`, { signal: controller.signal });
+        clearTimeout(timeout);
         const data = await res.json();
         if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
-      } catch(err) { /* offline fallback — pin won't appear on map */ }
+      } catch(err) {}
 
-      // Save to localStorage
-      const entry = { pub: location.split('(')[0].trim(), address: location, datetime: displayDT, caption, photo: photoSrc.startsWith('data:') ? photoSrc : '', lat, lng };
-      const uploads = JSON.parse(localStorage.getItem('latrinaliaUploads') || '[]');
-      uploads.unshift(entry);
-      localStorage.setItem('latrinaliaUploads', JSON.stringify(uploads));
+      // Save to Firestore
+      await db.collection('posts').add({
+        pub: location.split('(')[0].trim(),
+        address: location,
+        datetime: displayDT,
+        caption,
+        photoURL,
+        lat,
+        lng,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
 
+      submitBtn.disabled = false;
       const toast = document.getElementById('toast');
       toast.classList.add('show');
       setTimeout(() => { toast.classList.remove('show'); window.location.href = 'feed.html'; }, 2000);

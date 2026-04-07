@@ -47,6 +47,18 @@
   <div id="main-map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyDHJ_vW37r4JIFILGKFR36mqNWE2DCzxAo",
+      authDomain: "latrinalia-project.firebaseapp.com",
+      projectId: "latrinalia-project",
+      storageBucket: "latrinalia-project.firebasestorage.app",
+      messagingSenderId: "257656095314",
+      appId: "1:257656095314:web:bb7e79f96febcab79f158b"
+    });
+  </script>
   <script src="menu.js"></script>
   <script>
     const map = L.map('main-map', {
@@ -105,9 +117,21 @@
       lng: -0.1718
     });
 
-    // Load any user-submitted entries from localStorage
-    const uploads = JSON.parse(localStorage.getItem('latrinaliaUploads') || '[]');
-    uploads.forEach(addPin);
+    // Load posts from Firebase
+    firebase.firestore().collection('posts').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+      snapshot.forEach(doc => {
+        const entry = doc.data();
+        if (entry.lat && entry.lng) addPin({
+          pub: entry.pub,
+          address: entry.address,
+          datetime: entry.datetime,
+          caption: entry.caption,
+          photo: entry.photoURL,
+          lat: entry.lat,
+          lng: entry.lng
+        });
+      });
+    });
   </script>
 
 </body>

@@ -50,24 +50,39 @@
 
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
-    // Append any user-submitted uploads from localStorage
-    const uploads = JSON.parse(localStorage.getItem('latrinaliaUploads') || '[]');
+    firebase.initializeApp({
+      apiKey: "AIzaSyDHJ_vW37r4JIFILGKFR36mqNWE2DCzxAo",
+      authDomain: "latrinalia-project.firebaseapp.com",
+      projectId: "latrinalia-project",
+      storageBucket: "latrinalia-project.firebasestorage.app",
+      messagingSenderId: "257656095314",
+      appId: "1:257656095314:web:bb7e79f96febcab79f158b"
+    });
+    const db = firebase.firestore();
     const container = document.querySelector('.feed-container');
-    uploads.forEach(entry => {
-      const article = document.createElement('article');
-      article.className = 'feed-item';
-      const photoHTML = entry.photo
-        ? `<img class="feed-photo" src="${entry.photo}" alt="${entry.pub}">`
-        : `<div class="feed-photo-placeholder" style="background:#111;font-size:4rem;">📷</div>`;
-      article.innerHTML = `
-        ${photoHTML}
-        <div class="feed-caption">
-          <div class="location">${entry.address}</div>
-          <div class="timestamp">${entry.datetime}</div>
-          ${entry.caption ? `<div style="font-size:0.82rem;margin-top:4px;opacity:0.7;">${entry.caption}</div>` : ''}
-        </div>`;
-      container.appendChild(article);
+
+    db.collection('posts').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+      // Remove any previously loaded Firebase posts (keep hardcoded Hoop & Toy)
+      container.querySelectorAll('.firebase-post').forEach(el => el.remove());
+      snapshot.forEach(doc => {
+        const entry = doc.data();
+        const article = document.createElement('article');
+        article.className = 'feed-item firebase-post';
+        const photoHTML = entry.photoURL
+          ? `<img class="feed-photo" src="${entry.photoURL}" alt="${entry.pub}">`
+          : `<div class="feed-photo-placeholder" style="background:#111;font-size:4rem;">📷</div>`;
+        article.innerHTML = `
+          ${photoHTML}
+          <div class="feed-caption">
+            <div class="location">${entry.address}</div>
+            <div class="timestamp">${entry.datetime}</div>
+            ${entry.caption ? `<div style="font-size:0.82rem;margin-top:4px;opacity:0.7;">${entry.caption}</div>` : ''}
+          </div>`;
+        container.appendChild(article);
+      });
     });
   </script>
   <script src="menu.js"></script>
