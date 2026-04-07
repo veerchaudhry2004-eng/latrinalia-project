@@ -5,8 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Upload — The Latrinalia Project</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     body { margin: 0; }
+
+    #pin-map {
+      width: 100%;
+      height: 220px;
+      margin-top: 8px;
+      border: 1px solid #ccc;
+      display: none;
+    }
+    #pin-map.visible { display: block; }
+    #pin-status { font-size: 0.75rem; color: #888; margin-top: 4px; font-family: 'Andale Mono', monospace; }
 
     /* Preview for uploaded photo */
     #photo-preview {
@@ -75,7 +86,10 @@
           </div>
           <span class="field-label">Add Location *</span>
           <div class="field-input-area" id="input-location">
-            <input type="text" placeholder="Pub name & address" style="display:block;width:100%;padding:8px 10px;font-family:'Andale Mono',monospace;font-size:0.78rem;border:1px solid #ccc;outline:none;">
+            <input type="text" id="location-input" placeholder="Pub name & address" style="display:block;width:100%;padding:8px 10px;font-family:'Andale Mono',monospace;font-size:0.78rem;border:1px solid #ccc;outline:none;">
+            <button type="button" id="btn-pin-map" style="margin-top:6px;width:100%;padding:6px;font-family:'Andale Mono',monospace;font-size:0.75rem;background:#111;color:#fff;border:none;cursor:pointer;">📍 Drop pin on map</button>
+            <div id="pin-map"></div>
+            <div id="pin-status">No pin dropped yet</div>
           </div>
         </div>
 
@@ -152,6 +166,7 @@
   <!-- Toast notification -->
   <div class="toast" id="toast">Submission added to the feed!</div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
@@ -172,6 +187,27 @@
     const pad = n => String(n).padStart(2, '0');
     document.getElementById('datetime-input').value =
       `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    // Pin map
+    let pinLat = null, pinLng = null, pinMap = null, pinMarker = null;
+    document.getElementById('btn-pin-map').addEventListener('click', function() {
+      const mapEl = document.getElementById('pin-map');
+      mapEl.classList.toggle('visible');
+      if (mapEl.classList.contains('visible') && !pinMap) {
+        pinMap = L.map('pin-map', { center: [51.505, -0.12], zoom: 13, zoomControl: true });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap', maxZoom: 19
+        }).addTo(pinMap);
+        pinMap.on('click', function(e) {
+          pinLat = e.latlng.lat;
+          pinLng = e.latlng.lng;
+          if (pinMarker) pinMarker.remove();
+          pinMarker = L.marker([pinLat, pinLng]).addTo(pinMap);
+          document.getElementById('pin-status').textContent = `Pin dropped at ${pinLat.toFixed(4)}, ${pinLng.toFixed(4)}`;
+        });
+      }
+      if (mapEl.classList.contains('visible')) setTimeout(() => pinMap.invalidateSize(), 100);
+    });
 
     // Toggle input areas when clicking a field
     document.querySelectorAll('.upload-field').forEach(field => {
@@ -210,7 +246,7 @@
     document.getElementById('upload-form').addEventListener('submit', async function(e) {
       e.preventDefault();
 
-      const location = document.querySelector('#input-location input').value.trim();
+      const location = document.getElementById('location-input').value.trim();
       const caption  = document.querySelector('#input-caption input').value.trim();
       const datetime = document.getElementById('datetime-input').value;
       const photoFile = document.getElementById('photo-input').files[0];
@@ -235,25 +271,26 @@
         photoURL = await ref.getDownloadURL();
       }
 
-      // Geocode via Nominatim — try multiple query strategies
-      let lat = null, lng = null;
-      const postcodeMatch = location.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}/i);
-      const queries = [
-        location + ', London',
-        postcodeMatch ? postcodeMatch[0] + ', London' : null,
-        location.split('(')[0].trim() + ', London'
-      ].filter(Boolean);
-
-      for (const q of queries) {
-        if (lat) break;
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 5000);
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=gb`, { signal: controller.signal });
-          clearTimeout(timeout);
-          const data = await res.json();
-          if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
-        } catch(err) {}
+      // Use manually dropped pin if available, otherwise try geocoding
+      let lat = pinLat, lng = pinLng;
+      if (!lat) {
+        const postcodeMatch = location.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}/i);
+        const queries = [
+          location + ', London',
+          postcodeMatch ? postcodeMatch[0] + ', London' : null,
+          location.split('(')[0].trim() + ', London'
+        ].filter(Boolean);
+        for (const q of queries) {
+          if (lat) break;
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=gb`, { signal: controller.signal });
+            clearTimeout(timeout);
+            const data = await res.json();
+            if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
+          } catch(err) {}
+        }
       }
 
       // Save to Firestore
