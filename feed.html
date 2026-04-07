@@ -5,8 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Feed — The Latrinalia Project</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     body { margin: 0; }
+    .add-pin-btn {
+      display: block; width: 100%; margin-top: 6px; padding: 6px;
+      background: #222; color: #fff; border: none; cursor: pointer;
+      font-family: 'Andale Mono', monospace; font-size: 0.75rem;
+    }
+    .pin-map-container { display: none; width: 100%; height: 200px; margin-top: 6px; }
+    .pin-map-container.visible { display: block; }
+    .pin-save-btn {
+      display: none; width: 100%; padding: 6px; margin-top: 4px;
+      background: #cc2222; color: #fff; border: none; cursor: pointer;
+      font-family: 'Andale Mono', monospace; font-size: 0.75rem;
+    }
   </style>
 </head>
 <body class="feed-body">
@@ -51,6 +64,7 @@
 
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
@@ -66,7 +80,6 @@
     const container = document.querySelector('.feed-container');
 
     db.collection('posts').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-      // Remove any previously loaded Firebase posts (keep hardcoded Hoop & Toy)
       container.querySelectorAll('.firebase-post').forEach(el => el.remove());
       snapshot.forEach(doc => {
         const entry = doc.data();
@@ -75,14 +88,59 @@
         const photoHTML = entry.photoURL
           ? `<img class="feed-photo" src="${entry.photoURL}" alt="${entry.pub}">`
           : `<div class="feed-photo-placeholder" style="background:#111;font-size:4rem;">📷</div>`;
+
+        const pinSection = (!entry.lat || !entry.lng) ? `
+          <button class="add-pin-btn">📍 Add map pin</button>
+          <div class="pin-map-container" id="pinmap-${doc.id}"></div>
+          <button class="pin-save-btn" id="pinsave-${doc.id}">Save pin to map</button>
+        ` : '';
+
         article.innerHTML = `
           ${photoHTML}
           <div class="feed-caption">
             <div class="location">${entry.address}</div>
             <div class="timestamp">${entry.datetime}</div>
             ${entry.caption ? `<div style="font-size:0.82rem;margin-top:4px;opacity:0.7;">${entry.caption}</div>` : ''}
+            ${pinSection}
           </div>`;
         container.appendChild(article);
+
+        // Wire up pin button if this post has no location
+        if (!entry.lat || !entry.lng) {
+          let leafletMap = null, marker = null, chosenLat = null, chosenLng = null;
+          const addBtn = article.querySelector('.add-pin-btn');
+          const mapContainer = article.querySelector(`#pinmap-${doc.id}`);
+          const saveBtn = article.querySelector(`#pinsave-${doc.id}`);
+
+          addBtn.addEventListener('click', function() {
+            mapContainer.classList.toggle('visible');
+            if (mapContainer.classList.contains('visible') && !leafletMap) {
+              leafletMap = L.map(mapContainer, { center: [51.505, -0.12], zoom: 13 });
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap', maxZoom: 19
+              }).addTo(leafletMap);
+              leafletMap.on('click', function(e) {
+                chosenLat = e.latlng.lat;
+                chosenLng = e.latlng.lng;
+                if (marker) marker.remove();
+                marker = L.marker([chosenLat, chosenLng]).addTo(leafletMap);
+                saveBtn.style.display = 'block';
+              });
+            }
+            if (mapContainer.classList.contains('visible')) {
+              setTimeout(() => leafletMap.invalidateSize(), 100);
+            }
+          });
+
+          saveBtn.addEventListener('click', async function() {
+            if (!chosenLat) return;
+            await db.collection('posts').doc(doc.id).update({ lat: chosenLat, lng: chosenLng });
+            addBtn.textContent = '✓ Pin saved';
+            addBtn.disabled = true;
+            mapContainer.classList.remove('visible');
+            saveBtn.style.display = 'none';
+          });
+        }
       });
     });
   </script>
