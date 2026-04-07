@@ -119,8 +119,11 @@
     });
 
     // Load posts from Firebase
+    const addedIds = new Set();
     firebase.firestore().collection('posts').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
       snapshot.forEach(doc => {
+        if (addedIds.has(doc.id)) return;
+        addedIds.add(doc.id);
         const entry = doc.data();
         if (entry.lat && entry.lng) addPin({
           pub: entry.pub,
