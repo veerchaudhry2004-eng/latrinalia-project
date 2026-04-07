@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload — The Latrinalia Project</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { margin: 0; }
+
+    /* Preview for uploaded photo */
+    #photo-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0; left: 0;
+      display: none;
+    }
+
+    .field-icon-box { position: relative; overflow: hidden; }
+  </style>
+</head>
+<body class="upload-body">
+
+  <!-- Header -->
+  <header class="page-header" style="position:fixed;">
+    <div class="header-left">
+      <span class="page-label">UPLOAD</span>
+      <button class="menu-toggle dark" id="menu-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <a href="index.html" class="header-center" style="position:absolute;left:50%;transform:translateX(-50%);">THE LATRINALIA PROJECT</a>
+  </header>
+
+  <!-- Dim overlay -->
+  <div class="menu-overlay" id="menu-overlay"></div>
+
+  <!-- Nav drawer -->
+  <nav class="nav-drawer" id="nav-drawer">
+    <button class="menu-close" id="menu-close">✕</button>
+    <a href="home.html">HOME</a>
+    <a href="data.html">DATA</a>
+    <a href="map.html">MAP</a>
+    <a href="feed.html">FEED</a>
+  </nav>
+
+  <div class="upload-form-container">
+
+    <form id="upload-form">
+
+      <!-- Main required fields -->
+      <div class="upload-grid-main">
+
+        <!-- Add Photo -->
+        <div class="upload-field required" id="field-photo" title="Add Photo">
+          <div class="field-icon-box">
+            <span class="box-label">Add Photo</span>
+            <div class="plus-badge">+</div>
+            <img id="photo-preview" alt="Preview">
+          </div>
+          <span class="field-label">Add Photo *</span>
+          <div class="field-input-area" id="input-photo">
+            <input type="file" id="photo-input" accept="image/*" style="display:block;width:100%;padding:6px 0;font-family:'Andale Mono',monospace;font-size:0.78rem;">
+          </div>
+        </div>
+
+        <!-- Add Location -->
+        <div class="upload-field required" id="field-location" title="Add Location">
+          <div class="field-icon-box">
+            <span class="box-label">Add Location</span>
+            <div class="plus-badge">+</div>
+          </div>
+          <span class="field-label">Add Location *</span>
+          <div class="field-input-area" id="input-location">
+            <input type="text" placeholder="Pub name & address" style="display:block;width:100%;padding:8px 10px;font-family:'Andale Mono',monospace;font-size:0.78rem;border:1px solid #ccc;outline:none;">
+          </div>
+        </div>
+
+        <!-- Add Date & Time -->
+        <div class="upload-field required" id="field-datetime" title="Add Date & Time">
+          <div class="field-icon-box">
+            <span class="box-label">Add Date &amp; Time</span>
+            <div class="plus-badge">+</div>
+          </div>
+          <span class="field-label">Add Date &amp; Time *</span>
+          <div class="field-input-area" id="input-datetime">
+            <input type="datetime-local" id="datetime-input" style="display:block;width:100%;padding:8px 10px;font-family:'Andale Mono',monospace;font-size:0.78rem;border:1px solid #ccc;outline:none;">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Secondary optional fields -->
+      <div class="upload-grid-secondary">
+
+        <div class="upload-field" id="field-caption" title="Add Caption">
+          <div class="field-icon-box">
+            <span class="box-label">Add Caption</span>
+          </div>
+          <span class="field-label">Add Caption</span>
+          <div class="field-input-area" id="input-caption">
+            <input type="text" placeholder="Short caption" style="display:block;width:100%;padding:8px 10px;font-family:'Andale Mono',monospace;font-size:0.78rem;border:1px solid #ccc;outline:none;">
+          </div>
+        </div>
+
+        <div class="upload-field" id="field-tags" title="Add Tags">
+          <div class="field-icon-box">
+            <span class="box-label">Add Tags</span>
+          </div>
+          <span class="field-label">Add Tags</span>
+          <div class="field-input-area" id="input-tags">
+            <input type="text" placeholder="e.g. political, humour, art" style="display:block;width:100%;padding:8px 10px;font-family:'Andale Mono',monospace;font-size:0.78rem;border:1px solid #ccc;outline:none;">
+          </div>
+        </div>
+
+        <div class="upload-field" id="field-visual" title="Add Visual Description">
+          <div class="field-icon-box">
+            <span class="box-label">Add Visual Description</span>
+          </div>
+          <span class="field-label">Add Visual Description</span>
+          <div class="field-input-area" id="input-visual">
+            <textarea rows="3" placeholder="Describe what is shown..." style="display:block;width:100%;padding:8px 10px;font-family:'Andale Mono',monospace;font-size:0.78rem;border:1px solid #ccc;outline:none;resize:vertical;"></textarea>
+          </div>
+        </div>
+
+        <div class="upload-field" id="field-transcription" title="Add Transcription">
+          <div class="field-icon-box">
+            <span class="box-label">Add Transcription</span>
+          </div>
+          <span class="field-label">Add Transcription</span>
+          <div class="field-input-area" id="input-transcription">
+            <textarea rows="3" placeholder="Transcribe the text shown..." style="display:block;width:100%;padding:8px 10px;font-family:'Andale Mono',monospace;font-size:0.78rem;border:1px solid #ccc;outline:none;resize:vertical;"></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Submit -->
+      <div class="upload-actions">
+        <span class="required-note">* required</span>
+        <button type="submit" class="submit-btn">
+          <img src="upload-icon.png" alt="Upload" style="height:60px;width:auto;">
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast">Submission added to the feed!</div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyDHJ_vW37r4JIFILGKFR36mqNWE2DCzxAo",
+      authDomain: "latrinalia-project.firebaseapp.com",
+      projectId: "latrinalia-project",
+      storageBucket: "latrinalia-project.firebasestorage.app",
+      messagingSenderId: "257656095314",
+      appId: "1:257656095314:web:bb7e79f96febcab79f158b"
+    });
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // Pre-fill date/time input
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('datetime-input').value =
+      `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    // Toggle input areas when clicking a field
+    document.querySelectorAll('.upload-field').forEach(field => {
+      field.addEventListener('click', function(e) {
+        if (e.target.closest('.field-input-area')) return;
+        const inputArea = this.querySelector('.field-input-area');
+        if (!inputArea) return;
+        const isActive = inputArea.classList.contains('active');
+        inputArea.classList.toggle('active', !isActive);
+        if (this.id === 'field-photo' && !isActive) {
+          document.getElementById('photo-input').click();
+        } else if (!isActive) {
+          const inp = inputArea.querySelector('input[type="text"], textarea');
+          if (inp) setTimeout(() => inp.focus(), 50);
+        }
+      });
+    });
+
+    // Photo preview
+    document.getElementById('photo-input').addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const preview = document.getElementById('photo-preview');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          document.querySelector('#field-photo .field-icon-box span').style.display = 'none';
+          document.querySelector('#field-photo .plus-badge').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Form submit
+    document.getElementById('upload-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const location = document.querySelector('#input-location input').value.trim();
+      const caption  = document.querySelector('#input-caption input').value.trim();
+      const datetime = document.getElementById('datetime-input').value;
+      const photoFile = document.getElementById('photo-input').files[0];
+
+      if (!location) { alert('Please add a location.'); return; }
+
+      // Format datetime for display
+      let displayDT = datetime;
+      if (datetime) {
+        const d = new Date(datetime);
+        displayDT = `${pad(d.getHours())}:${pad(d.getMinutes())} ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+      }
+
+      const submitBtn = document.querySelector('.submit-btn');
+      submitBtn.disabled = true;
+
+      // Upload photo to Firebase Storage
+      let photoURL = '';
+      if (photoFile) {
+        const ref = storage.ref(`photos/${Date.now()}_${photoFile.name}`);
+        await ref.put(photoFile);
+        photoURL = await ref.getDownloadURL();
+      }
+
+      // Geocode via Nominatim (5s timeout)
+      let lat = null, lng = null;
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location + ', London')}&format=json&limit=1`, { signal: controller.signal });
+        clearTimeout(timeout);
+        const data = await res.json();
+        if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
+      } catch(err) {}
+
+      // Save to Firestore
+      await db.collection('posts').add({
+        pub: location.split('(')[0].trim(),
+        address: location,
+        datetime: displayDT,
+        caption,
+        photoURL,
+        lat,
+        lng,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      submitBtn.disabled = false;
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); window.location.href = 'feed.html'; }, 2000);
+    });
+  </script>
+  <script src="menu.js"></script>
+
+</body>
+</html>
